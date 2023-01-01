@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript">   
+
+        const N = 21
+        // 0=rock 1=paper 2=scissor
+
+        function dist(a,b){
+            var d = Math.sqrt(Math.pow((a.x-b.x),2) + Math.pow((a.y-b.y),2));
+            return d;
+        }
+
+        function normalize(v) {
+            var length = Math.sqrt(v.x * v.x + v.y * v.y);
+            return {x: v.x / length, y: v.y / length};
+        }
+
+        var canvas, context, r,g,b, play;
+        var position, balls = [], step;
+
+        function init() {
+            canvas = document.getElementById('canvas');
+            if (canvas.getContext)
+                context = canvas.getContext('2d');
+            else return;
+
+            i = 0
+            while (i<N){
+                sx = Math.floor(Math.random() * 400);
+                sy = Math.floor(Math.random() * 400);
+                tx = Math.floor(Math.random() * 400);
+                ty = Math.floor(Math.random() * 400);
+
+                position = {x: sx, y: sy}
+
+                flag = false
+                for (j=0;j<i;j++)
+                    if (dist(position,balls[j].pos)<=20 || sx<=10 || sy<=10) {
+                        flag = true
+                        break
+                    }
+
+                if (flag)
+                    continue
+                
+                step = normalize({x: tx - sx, y: ty - sy})
+                if (i<N/3)
+                    typ = 0
+                else if (i<(2*N/3))
+                    typ = 1
+                else
+                    typ = 2
+                balls.push({pos:position,typ:typ,vel:step,num:i})
+                i++
+                // console.log("Hello")
+            }
+            r = 7;
+            g = 7;
+            b = 7;
+            
+            context.strokeStyle = 'black';
+            context.lineWidth = 5;
+
+            // draw a red line
+            context.beginPath();
+            context.moveTo(100, 100);
+            context.lineTo(300, 100);
+            context.stroke();
+            // play = setInterval(draw, 1000/60); // 60 times per second
+        }
+
+        function bounce(ball){
+            // console.log(ball)
+            for (j=0;j<N;j++){
+                if (dist(ball.pos,balls[j].pos)<=20 && ball.num!=balls[j].num){
+                    temp = ball.vel.x
+                    ball.vel.x = balls[j].vel.x
+                    balls[j].vel.x = temp
+                    temp = ball.vel.y
+                    ball.vel.y = balls[j].vel.y
+                    balls[j].vel.y = temp
+                    if (ball.typ==balls[j].typ)
+                        break
+                    if (ball.typ==1 && balls[j].typ==0){
+                        balls[j].typ = 1
+                        g++;
+                        r--;
+                    }
+                    else if (ball.typ==0 && balls[j].typ==1){
+                        ball.typ = 1
+                        g++;
+                        r--;
+                    }
+                    else if (ball.typ==0 && balls[j].typ==2){
+                        balls[j].typ = 0
+                        r++;
+                        b--;
+                    }
+                    else if (ball.typ==2 && balls[j].typ==0){
+                        ball.typ = 0
+                        r++;
+                        b--;
+                    }
+                    else if (ball.typ==2 && balls[j].typ==1){
+                        balls[j].typ = 2
+                        b++;
+                        g--;
+                    }
+                    else if (ball.typ==1 && balls[j].typ==2){
+                        ball.typ = 2
+                        b++;
+                        g--;
+                    }
+                    break
+                }
+            }
+            if (r==21 || g==21 || b==21){
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                clearInterval(play);  
+            }
+            // return ball
+        }
+        
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
+
+            for (i=0;i<N;i++){
+                // console.log(balls[i])
+                if (balls[i].typ==0)
+                    context.fillStyle = "rgb(150,29,28)"
+                else if (balls[i].typ==1)
+                    context.fillStyle = "rgb(15,129,28)"
+                else
+                    context.fillStyle = "rgb(15,29,168)"
+                context.beginPath(); 
+                
+                context.arc(balls[i].pos.x, balls[i].pos.y, 10, 0, Math.PI * 2, true);    
+                context.fill();
+                context.closePath(); 
+
+                balls[i].pos.x += balls[i].vel.x
+                balls[i].pos.y += balls[i].vel.y
+                bounce(balls[i])
+                
+                if (balls[i].pos.x+10>=500 || balls[i].pos.x-10<=0)
+                    balls[i].vel.x = 0-balls[i].vel.x;
+                if (balls[i].pos.y+10>=500 || balls[i].pos.y-10<=0)
+                    balls[i].vel.y = 0-balls[i].vel.y;
+            }
+        } 
+    </script>
+</head>
+<body onload="init();"> 
+    <canvas id="canvas" width="500" height="500"></canvas><br>
+</body>
+</html>
