@@ -58,9 +58,49 @@ function newMaze(x, y) {
     return cells;
 }
     
+class Queue {
+    constructor() {
+        this.items = {}
+        this.frontIndex = 0
+        this.backIndex = 0
+    }
+    enq(item) {
+        this.items[this.backIndex] = item
+        this.backIndex++
+        return item + ' inserted'
+    }
+    deq() {
+        const item = this.items[this.frontIndex]
+        delete this.items[this.frontIndex]
+        this.frontIndex++
+        return item
+    }
+    peek() {
+        return this.items[this.frontIndex]
+    }
+    get printQueue() {
+        return this.items;
+    }
+    nempty() {
+        return this.items.length>0
+    }
+}
+const q = new Queue()
+
 function solver(){
     start = [0,0]
 
-    // while ()
+    q.enq(start)
+    visited = [start]
+    while (q.nempty()){
+        cur = q.deq()
+        if (cur[0]==19 && cur[1]==19)
+            drawpath()
+        for (i=0;i<4;i++){
+            if (cells[cur[0]][cur[1]][i] = 1 && cells[cur[0]][cur[1]][i])
+
+        }
+    }
     end = [19,19]
+
 }
