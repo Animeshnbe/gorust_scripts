@@ -1,6 +1,7 @@
 import ftplib
 import sys
 import os
+import math
 
 print("WELCOME TO MY FTP BROWSER")
 # domain = 'ftp.us.debian.org' 
@@ -10,7 +11,7 @@ print("WELCOME TO MY FTP BROWSER")
 # pwd = input("Enter a password")
 try:
     ftp = ftplib.FTP() # , user, pwd)
-    ftp.connect(host='192.168.137.251',port=9999) #ip port
+    ftp.connect(host='192.168.137.237',port=9999) #ip port
     ftp.login()
     print(ftp.getwelcome())
     print("Connected successfully...")
@@ -22,8 +23,10 @@ while True:
 
     if (ch==1):
         print("File List: ")
-        files = []
-        ftp.dir(files.append)
+        ftp.cwd('Documents')
+        files = ftp.mlsd()
+        # files = []
+        # ftp.dir(files.append)
         for file in files:
             print(file)
 
