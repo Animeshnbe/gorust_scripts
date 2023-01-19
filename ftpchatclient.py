@@ -4,12 +4,9 @@ import os
 import threading
 import time
 
-# users = {"Stokes":0,"Warner":0,"Bavuma":0,"Kohli":0}
-
 savedSet = set()
 savedUsr = set()
 stp = False
-# mypath='inbox'
 
 class bcolors:
     HEADER = '\033[95m'
@@ -27,8 +24,7 @@ def downloader(ftp,file_copy):
     try:
         with open(file_copy, 'w') as fp:
             res = ftp.retrlines('RETR ' + file_copy, fp.write)
-
-            if not res.startswith('226 Transfer complete'):
+            if not res.startswith('226 Operation success') and not res.startswith('226 Transfer complete'):
                 print('Download failed')
                 if os.path.isfile(file_copy):
                     os.remove(file_copy)
@@ -38,6 +34,60 @@ def downloader(ftp,file_copy):
 
         if os.path.isfile(file_copy):
             os.remove(file_copy)
+
+def add(msg):
+    nums = msg[32:-1].split(',')
+    s = 0
+    for n in nums:
+        s+=int(n)
+    return s
+
+def sub(msg):
+    n = msg[32:-1].split(',')
+    return int(n[0])-int(n[1])
+
+def mult(msg):
+    n = msg[33:-1].split(',')
+    return int(n[0])*int(n[1])
+
+def process(ftp,msg_file):
+    downloader(ftp,msg_file)
+    name = msg_file.split('.')[0].split('_')[0]
+    # print("Opening ",mypath+"/"+msg_file)
+    with open(msg_file, 'r+') as fp, open(name+"_old.txt","a") as f2:
+        # last_read = int(fp.readline())
+        # i = 0
+        for m in fp.readlines():
+            # if i>=last_read:
+            print("\n"+bcolors.OKGREEN+name+"> "+m+bcolors.ENDC)
+            if (m.find("add")!=-1): # processing message
+                s = add(m)
+                sendback = who+"_"+str(int(time.time()))+".txt"
+                with open(sendback, 'w') as fp: #raw file created to upload
+                    fp.write("\nSum: "+str(s))
+                fin = open(sendback, 'rb')
+                rpc = FTP()
+                rpc.connect(host="127.0.0.1", port=2121)
+                rpc.login()
+                rpc.cwd("/"+name+"_inbox")
+                _ = rpc.storbinary("STOR "+sendback, fin, 1)
+                fin.close()
+                os.remove(sendback)
+                rpc.quit()
+
+                print(bcolors.BOLD+"Sum "+str(s)+bcolors.ENDC)
+                
+            # i+=1
+            f2.write(m+"\n")
+        
+        # fp.seek(0)
+        # fp.write(str(i))
+    os.remove(msg_file)
+
+    if name+"_join.txt" in ftp.nlst():
+        ftp.delete(msg_file)
+    else:
+        ftp.rename(msg_file,name+"_join.txt") #first msg, helps to check join chat
 
 def rcv():
     global who
@@ -81,55 +131,8 @@ def rcv():
             
         for msg in newSet:
             msg_file = msg[0]
-
-            # if (msg[0]-<
-            downloader(ftp,msg_file)
-            name = msg_file.split('.')[0].split('_')[0]
-            # print("Opening ",mypath+"/"+msg_file)
-            with open(msg_file, 'r+') as fp, open(name+"_old.txt","a") as f2:
-                # last_read = int(fp.readline())
-                # i = 0
-                for m in fp.readlines():
-                    # if i>=last_read:
-                    print("\n"+bcolors.OKGREEN+name+"> "+m+bcolors.ENDC)
-                    if (m.find("add")!=-1): # processing message
-                        nums = m[32:-1].split(',')
-                        s = 0
-                        for n in nums:
-                            s+=int(n)
-                        # if who+".txt" not in os.listdir('.'):
-                        #     with open(who+".txt", 'w') as fp: #raw file created to upload
-                        #         fp.write("0\n")
-                        #         fp.write("Sum: "+str(s))
-                        # else:
-                        sendback = who+"_"+str(int(time.time()))+".txt"
-                        with open(sendback, 'w') as fp: #raw file created to upload
-                            fp.write("\nSum: "+str(s))
-                        fin = open(sendback, 'rb')
-                        rpc = FTP()
-                        rpc.connect(host="127.0.0.1", port=2121)
-                        rpc.login()
-                        rpc.cwd("/"+name+"_inbox")
-
-
-                        _ = rpc.storbinary("STOR "+sendback, fin, 1)
-                        fin.close()
-                        os.remove(sendback)
-                        rpc.quit()
-
-                        print(bcolors.BOLD+"Sum "+str(s)+bcolors.ENDC)
-                        
-                    # i+=1
-                    f2.write(m+"\n")
-                
-                # fp.seek(0)
-                # fp.write(str(i))
-            os.remove(msg_file)
-
-            if name+"_join.txt" in ftp.nlst():
-                ftp.delete(msg_file)
-            else:
-                ftp.rename(msg_file,name+"_join.txt") #first msg, helps to check join chat
+            t = threading.Thread(target=process, args=(ftp,msg_file))
+            t.start()
 
             # mod = (msg_file,os.stat(os.path.join(mypath, msg_file)).st_mtime)
             # retrievedSet.remove(msg)
@@ -139,17 +142,21 @@ def rcv():
         savedUsr=nameSet
         time.sleep(1)
 
-def send():
-    global who
-    global stp
-    ftp = FTP()
-    # ip = input("Enter ip of server: ")
-    ip = "127.0.0.1"
-    try:
-        _ = ftp.connect(host=ip, port=2121)
-        ftpResponse = ftp.login()
-    except Exception:
-        print(bcolors.FAIL+"Cannot connect to FTP server "+bcolors.ENDC)
+
+# send()
+
+ftp = FTP()
+# ip = input("Enter ip of server: ")
+ip = "127.0.0.1"
+try:
+    _ = ftp.connect(host=ip, port=2121)
+    ftpResponse = ftp.login()
+    print("Success")
+except Exception:
+    print(bcolors.FAIL+"Cannot connect to FTP server here"+bcolors.ENDC)
+else:
+    t2 = threading.Thread(target=rcv, args=())
+    t2.start()
     while True:
         dest = input("Enter name of receiver, 0 to exit: ")
         # TO SEND IN DIFFERENT MACHINE
@@ -188,15 +195,6 @@ def send():
             with open(fileName, 'w') as fp: #raw file created to upload
                 fp.write(str(dt.now())+": "+msg)
             fin = open(fileName, 'rb')
-            
-            # ftp.mkd(dir)
-            # files = []
-            # ftp.retrlines('LIST', files.append)
-            # for f in files:
-            #     print(f)
-
-            # files = []
-            # ftp.dir(files.append)
 
 
             # storeCommand = "APPE %s"%fileName;  #Saving history
@@ -208,9 +206,3 @@ def send():
             print(ftpResponse)
             cre = True
     ftp.quit()
-        
-
-t2 = threading.Thread(target=rcv, args=())
-t2.start()
-
-send()

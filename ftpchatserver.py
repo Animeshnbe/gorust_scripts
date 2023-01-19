@@ -1,12 +1,8 @@
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from ftplib import FTP
-from datetime import datetime as dt
-import os
-import threading
-import time
 import logging
+# import os
 
 # users = {"Stokes":0,"Warner":0,"Bavuma":0,"Kohli":0}
 
@@ -27,14 +23,20 @@ class bcolors:
 #SERVER ADDRESS
 addr = ('127.0.0.1', 2121)
 
+# def add_user():
+#     while True:
+#         os.stat('.creds')
+    # with open('.creds','r') as cred:
+    #     for uc in cred.readlines():
+    #         un, pwd = uc.split()
+    #         authorizer.add_user(un,pwd,perm='elradfmwM')
+
 authorizer=DummyAuthorizer()
 authorizer.add_anonymous('.',perm='elradfmwM')
-# authorizer.add
+
 handler=FTPHandler
 handler.authorizer=authorizer
 logging.basicConfig(filename='pyftpd.log', level=logging.INFO)
-# t2 = threading.Thread(target=rcv, args=(selfp,))
-# t2.start()
 server=FTPServer(addr,handler)
 server.serve_forever()
 

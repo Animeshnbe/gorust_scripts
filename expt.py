@@ -19,7 +19,16 @@ import itertools
 # fp.write(str(i))
 
 # fp.close()
-print(type(os.stat(os.path.join("2201_inbox", "Aman.txt")).st_mtime))
+# print(type(os.stat(os.path.join("2201_inbox", "Aman.txt")).st_mtime))
+
 # g = (1,2)
 # g[1] = 3
 # print(g)
+
+import traceback
+
+try:
+    a = 100/0
+    print(a)
+except Exception as e:
+    print(e)

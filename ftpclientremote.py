@@ -12,9 +12,13 @@ print("WELCOME TO MY FTP BROWSER")
 try:
     ftp = ftplib.FTP() # , user, pwd)
     ftp.connect(host='192.168.137.237',port=9999) #ip port
-    ftp.login()
+    res = ftp.login('animesh','pwd')
+    print("Meow ",res)
     print(ftp.getwelcome())
     print("Connected successfully...")
+except ftplib.error_perm as e:
+    print(e)
+    sys.exit("Done")
 except Exception as ex:
     sys.exit("Could not connect to remote server")
 
