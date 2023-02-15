@@ -18,7 +18,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 print(bcolors.HEADER+"Welcome to FTP Chat!"+bcolors.ENDC)
-who = input("Enter your name: ")
+who,op = input("Enter your name, and the operation you will perform: ").split()
 
 def downloader(ftp,file_copy):
     try:
@@ -28,68 +28,101 @@ def downloader(ftp,file_copy):
                 print('Download failed')
                 if os.path.isfile(file_copy):
                     os.remove(file_copy)
+                return False
+            else:
+                return True
 
     except all_errors as e:
         print('FTP error:', e)
 
         if os.path.isfile(file_copy):
             os.remove(file_copy)
+        return False
 
 def add(msg):
-    nums = msg[32:-1].split(',')
+    nums = msg[8:-1].split(',')
     s = 0
     for n in nums:
         s+=int(n)
     return s
 
 def sub(msg):
-    n = msg[32:-1].split(',')
+    n = msg[8:-1].split(',')
     return int(n[0])-int(n[1])
 
 def mult(msg):
-    n = msg[33:-1].split(',')
+    n = msg[9:-1].split(',')
     return int(n[0])*int(n[1])
 
-def process(ftp,msg_file):
+def inc(msg,name,ftp):
+    if len(msg)>8:
+        n = msg[8:-1]
+    else:
+        state = name+"_join.txt"
+        if downloader(ftp,state):
+            with open(state, 'rb') as f:
+                try:  # catch OSError in case of a one line file 
+                    f.seek(-2, os.SEEK_END)
+                    while f.read(1) != b'\n':
+                        f.seek(-2, os.SEEK_CUR)
+                except OSError:
+                    f.seek(0)
+                last_line = f.readline().decode()
+                n = 0
+        else:
+            return 0
+    return int(n)+1
+
+def process(ftp,msg_file,op):
     downloader(ftp,msg_file)
     name = msg_file.split('.')[0].split('_')[0]
+    global who
     # print("Opening ",mypath+"/"+msg_file)
-    with open(msg_file, 'r+') as fp, open(name+"_old.txt","a") as f2:
+    with open(msg_file, 'r+') as fp, open(who+"_requests_old.txt","a") as f2:
         # last_read = int(fp.readline())
         # i = 0
         for m in fp.readlines():
             # if i>=last_read:
             print("\n"+bcolors.OKGREEN+name+"> "+m+bcolors.ENDC)
-            if (m.find("add")!=-1): # processing message
-                s = add(m)
-                sendback = who+"_"+str(int(time.time()))+".txt"
-                with open(sendback, 'w') as fp: #raw file created to upload
-                    fp.write("\nSum: "+str(s))
-                fin = open(sendback, 'rb')
-                rpc = FTP()
-                rpc.connect(host="127.0.0.1", port=2121)
-                rpc.login()
-                rpc.cwd("/"+name+"_inbox")
-                _ = rpc.storbinary("STOR "+sendback, fin, 1)
-                fin.close()
-                os.remove(sendback)
-                rpc.quit()
-
-                print(bcolors.BOLD+"Sum "+str(s)+bcolors.ENDC)
-                
+            try:
+                if op=="add" and (m.find("add")!=-1): # revalidate
+                    s = add(m)
+                elif op=="subtract" and (m.find("sub")!=-1): # revalidate
+                    s = sub(m)
+                elif op=="multiply" and (m.find("mult")!=-1): # revalidate
+                    s = mult(m)
+                elif op=="increment" and (m.find("inc")!=-1): # revalidate
+                    s = inc(m,name,ftp)
+                else: #invalid, ignore
+                    s = "Invalid request"
+            except ValueError:
+                s = "Could not perform the operation, recheck the request params"
+            sendback = who+"_"+str(int(time.time()))+".txt"
+            with open(sendback, 'w') as fp: #raw file created to upload
+                fp.write("Result: "+str(s))
+            fin = open(sendback, 'rb')
+            rpc = FTP()
+            rpc.connect(host="127.0.0.1", port=2121)
+            rpc.login()
+            rpc.cwd("/"+name+"_inbox")
+            _ = rpc.storbinary("STOR "+sendback, fin, 1)
+            fin.close()
+            os.remove(sendback)
+            rpc.quit()                
             # i+=1
-            f2.write(m+"\n")
+            f2.write(name+"> "+m+"\n")  #past record
         
         # fp.seek(0)
         # fp.write(str(i))
     os.remove(msg_file)
 
     if name+"_join.txt" in ftp.nlst():
+        # ? APPEND b4 deleting to visualize connection
         ftp.delete(msg_file)
     else:
         ftp.rename(msg_file,name+"_join.txt") #first msg, helps to check join chat
 
-def rcv():
+def listen(op):
     global who
     ftp = FTP()
     # ip = input("Enter ip of receiver: ")
@@ -124,6 +157,7 @@ def rcv():
         newSet=retrievedSet-savedSet
         # deletedSet=savedSet-retrievedSet
 
+        # * SESSION details
         for name in nameSet-savedUsr:
             print("\n"+bcolors.WARNING+bcolors.UNDERLINE+name+" has joined the chat.\n"+bcolors.ENDC)
         for name in savedUsr-nameSet:
@@ -131,7 +165,7 @@ def rcv():
             
         for msg in newSet:
             msg_file = msg[0]
-            t = threading.Thread(target=process, args=(ftp,msg_file))
+            t = threading.Thread(target=process, args=(ftp,msg_file,op)) # *PARALLEL REQUESTS
             t.start()
 
         savedSet=retrievedSet
@@ -148,57 +182,21 @@ try:
     _ = ftp.connect(host=ip, port=2121)
     ftpResponse = ftp.login()
     print("Success")
+    # *BOOTSTRAPPING
+    ftp.cwd('serve')
+    fileName = "servers.txt"
+    with open(fileName,"w") as f:
+        f.write(op+' '+who+'\n')
+    fin = open(fileName, 'rb')
+    storeCommand = "APPE %s"%fileName;
+
+    ftpResponse = ftp.storbinary(storeCommand, fin, 1)
+    fin.close()
+    # !WILL CAUSE ISSUE IF BOOTSTRAP AND ALL OTHER SERVERS ARE RUNNING IN SAME LOC
+    os.remove(fileName)
+    ftp.quit()
 except Exception:
     print(bcolors.FAIL+"Cannot connect to FTP server here"+bcolors.ENDC)
 else:
-    t2 = threading.Thread(target=rcv, args=())
-    t2.start()
-    while True:
-        dest = input("Enter name of receiver, 0 to exit: ")
-        # TO SEND IN DIFFERENT MACHINE
-        if dest=="0":
-            print("Server> Bye!")
-            stp = True
-            break
-        try:
-            ftpResponse = ftp.cwd("/"+dest+"_inbox")
-            print(ftpResponse)
-        except Exception:
-            print(bcolors.FAIL+"Cannot connect to receiver "+dest+bcolors.ENDC)
-            continue
-        
-        cre = False
-        while True:
-            try:
-                ch = int(input("Enter 1 to continue sending msgs, 0 to switch: "))
-            except ValueError:
-                print(bcolors.FAIL+"Please enter a valid choice!"+bcolors.ENDC)
-                continue
-
-            if (ch!=1):
-                # ftp.rename(who+".txt",who+"_old.txt") #keep inbox
-                if cre:
-                    ftp.delete(who+"_join.txt")
-                break
-            msg = input("Enter you msg> ")
-            if msg=="WHO AM I":
-                print(bcolors.OKGREEN+"Server> "+who+bcolors.ENDC)
-                continue
-            fileName = who+"_"+str(int(time.time()))+".txt"
-            # if cre:
-            # files = ftp.nlst()
-            # ftp.retrlines('LIST', files.append)
-            with open(fileName, 'w') as fp: #raw file created to upload
-                fp.write(str(dt.now())+": "+msg)
-            fin = open(fileName, 'rb')
-
-
-            # storeCommand = "APPE %s"%fileName;  #Saving history
-            storeCommand = "STOR %s"%fileName;
-
-            ftpResponse = ftp.storbinary(storeCommand, fin, 1)
-            fin.close()
-            os.remove(fileName)
-            print(ftpResponse)
-            cre = True
-    ftp.quit()
+    listen(op)
+    # t2.start()
