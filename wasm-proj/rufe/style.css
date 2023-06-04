@@ -1,0 +1,26 @@
+body {
+    background-color: slategray;
+}
+
+div {
+    margin-top: 35px;
+    text-align: center;
+    color: antiquewhite;
+    font-family: Cubano;
+}
+
+p {
+    font-size: 2em;
+}
+
+button {
+    width: 20%;
+    height: 70px;
+    font-size: 1.5em;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+    text-align: center;
+    background-color: cadetblue;
+    border: 8px solid;
+    border-radius: 20px;
+}

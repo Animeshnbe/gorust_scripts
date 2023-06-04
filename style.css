@@ -1,0 +1,73 @@
+body{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    background-color: #2f3542;
+    color: #fff;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.animation{
+    font-size: 34px;
+    font-weight: 600;
+    min-width: 280px;
+}
+
+.animation-text span{
+    position: relative;
+}
+
+.animation-text span::before{
+    content: 'an Engineer';
+    color: aqua;
+    animation: words 20s infinite;
+}
+
+.animation-text span::after{
+    content: '';
+    background-color: #2f3542;
+    position: absolute;
+    width: calc(100%+8px);
+    height: 100%;
+    border-left: 2px solid aqua;
+    right: -8px;
+    animation: cursor .6s infinite, typing 20s steps(14) infinite;
+}
+
+@keyframes cursor{
+    to{
+        border-left: 2px solid #2f3542;
+    }
+}
+
+@keyframes words {
+    0%,20%{
+        content: 'an Engineer';
+    }
+    21%,40%{
+        content: 'a Developer';
+    }
+    41%,60%{
+        content: 'a Software Architect';
+    }
+    61%,80%{
+        content: 'a Researcher';
+    }
+    81%,100%{
+        content: 'a Thinker';
+    }
+}
+
+@keyframes typing {
+    10%,15%,30%,35%,50%,55%,70%,75%,90%,95%{
+        width: 0;
+    }
+    5%,20%,25%,40%,45%,60%,65%,80%,85%{
+        width: calc(100%+8px);
+    }
+    
+}

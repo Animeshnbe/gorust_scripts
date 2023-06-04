@@ -1,3 +1,7 @@
 *.exe
 venv
 *.log
+wasm-proj/*/target/
+wasm-proj/*/dist/
+wasm-proj/*/*.lock
+.vscode
