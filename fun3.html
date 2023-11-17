@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <title>Rerank</title>
+        <style>
+            body{
+                background-color: rgb(47, 2, 2);
+            }
+            .tile-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            #wordInput {
+                display: inline-block;
+                width: 300px;
+                height: 30px;
+                margin-right: 10px;
+                margin-left: 20%;
+                align-self: center;
+            }
+
+            #addButton {
+                display: inline-block;
+                width: 120px;
+                height: 40px;
+                vertical-align: middle;
+            }
+            .tile {
+                display: block;
+                padding: 10px;
+                width: 20vi;
+                margin: 5px auto;
+                background-color: #f2f2f2;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                cursor: grab;
+            }
+        
+            .tile:hover {
+                background-color: #66edf4;
+            }
+        
+            .tile.dragging {
+                opacity: 0.5;
+                cursor: grabbing;
+                transform: scale(1.05);
+            }
+        </style>
+    </head>
+    <body>
+        <input type="text" id="wordInput" placeholder="Enter a word">
+        <button id="addButton" onclick="addTile()">Add Tile</button>
+
+        <div id="tileContainer" class="tile-container"></div>
+
+    </body>
+    <script>
+        // Function to create a new tile
+        function createTile(word) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.textContent = word;
+          tile.draggable = true;
+    
+          tile.addEventListener("dragstart", dragStart);
+          tile.addEventListener("dragover", dragOver);
+          tile.addEventListener("drop", drop);
+          tile.addEventListener("dragend", dragEnd);
+    
+          return tile;
+        }
+    
+        // Function to add a new tile
+        function addTile() {
+          const wordInput = document.getElementById("wordInput");
+          const word = wordInput.value.trim();
+    
+          if (word !== "") {
+            const tile = createTile(word);
+            const tileContainer = document.getElementById("tileContainer");
+            tileContainer.appendChild(tile);
+            localStorage.setItem("tiles", tileContainer.innerHTML);
+            wordInput.value = "";
+          }
+          
+        }
+
+        document.getElementById("wordInput").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addTile();
+            }
+        });
+    
+        // Drag and drop event handlers
+        let draggingTile = null;
+    
+        function dragStart(event) {
+          draggingTile = this;
+          this.classList.add("dragging");
+        }
+    
+        function dragOver(event) {
+          event.preventDefault();
+        }
+
+        function dragEnter(event) {
+          event.preventDefault();
+          this.classList.add("drag-over");
+        }
+
+        function dragLeave(event) {
+          this.classList.remove("drag-over");
+        }
+    
+        function drop(event) {
+          if (draggingTile !== this) {
+            const tileContainer = document.getElementById("tileContainer");
+            const tiles = Array.from(tileContainer.getElementsByClassName("tile"));
+            const draggingIndex = tiles.indexOf(draggingTile);
+            const dropIndex = tiles.indexOf(this);
+
+            if (draggingIndex < dropIndex) {
+              tileContainer.insertBefore(draggingTile, this.nextSibling);
+            } else {
+              tileContainer.insertBefore(draggingTile, this);
+            }
+            
+          }
+        }
+    
+        function dragEnd(event) {
+          draggingTile.classList.remove("dragging");
+          draggingTile.classList.remove("drag-over");
+          draggingTile = null;
+        }
+
+        window.addEventListener("load", function () {
+            const savedTiles = localStorage.getItem("tiles");
+
+            if (savedTiles) {
+                const tileContainer = document.getElementById("tileContainer");
+                tileContainer.innerHTML = savedTiles;
+                initializeDragAndDrop();
+            }
+        });
+
+    </script>  
+</html>
