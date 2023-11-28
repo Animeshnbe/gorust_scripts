@@ -1,7 +1,10 @@
 *.exe
-venv
+*venv/
 *.log
 wasm-proj/*/target/
 wasm-proj/*/dist/
 wasm-proj/*/*.lock
 .vscode
+*node_modules/
+*package-lock.json
+*.txt

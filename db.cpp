@@ -1,26 +1,49 @@
-#include <bits/stdc++.h>
+#include <vector>
+#include <iostream>
+#include <set>
 using namespace std;
 
-int main(){
+int rec(vector<pair<int,int>>& strips, int cuts){
+    if (cuts==k) {
+        int s=0;
+        for (auto& p:strips)
+            s += (p.first*p.second);
+    }
+
+    int ans = 0;
+    for (auto it=strips.begin();it!=strips.end();it++){
+        auto p = *it;
+        it = strips.erase(it);
+        for (int i=1;i<=p.first/2;i++) {
+            strips.insert(it,{i,p.second});
+            strips.insert(it,{p.first-i,p.second});
+            ans = min(ans,rec(strips,cuts+1));
+        }
+    }
     
-    vector<int> arr = {0,1,0,1,0};
-    int k = 2,n=arr.size();
-    int ans=0,pc;
-    for (int i = 0; i < n;i++) {
-        unordered_map<int,int> f;
-        pc = 0;
-        for (int j = i; j < n;j++){
-            f[arr[j]]++;
-            pc += (f[arr[j]]-1);
-            // int val = f[arr[j]];
-            
-            if (pc >= k) {
-                // cout<<"found "<<i<<":"<<j<<endl;
-                ans++;
-                // break;
-            }
+}
+int main(){
+    int t;
+    cin>>t;
+    vector<bool> ans(100,true);
+    bool f = false;
+    int n;
+    for (int i=0;i<t;i++){
+        int r;
+        cin>>r;
+        
+        set<int> lines;
+        for (int j=0;j<r;j++){
+            cin>>n;
+            lines.insert(n);
+        }
+        for (int j=0;j<100;j++){
+            if (ans[j] && lines.find(j+1)==lines.end())
+                ans[j] = false;
         }
     }
 
-    cout << ans << endl;
+    for (int i=0;i<100;i++){
+        if (ans[i]) cout<<i+1<<" ";
+    }
 }
