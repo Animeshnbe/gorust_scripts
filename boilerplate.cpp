@@ -317,6 +317,18 @@ ll gcd(ll n, ll m)
     return gcd(m, n % m);
 }
 
+int partition(vector<int>& arr, int l, int r) { 
+    int pivot = arr[r], i = l; 
+    for (int j=l; j<r; j++) { 
+        if (arr[j] <= pivot) { 
+            swap(arr[i], arr[j]); 
+            i++; 
+        }
+    } 
+    swap(arr[r], arr[i]); 
+    return i; 
+} 
+
 void set_io(string name = ""){
     ios_base::sync_with_stdio(false);
     cin.tie(nullptr);
